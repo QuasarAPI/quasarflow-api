@@ -9,14 +9,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/QuasarAPI/quasarflow-api/internal/config"
-	"github.com/QuasarAPI/quasarflow-api/internal/infrastructure/crypto"
-	"github.com/QuasarAPI/quasarflow-api/internal/infrastructure/database"
-	"github.com/QuasarAPI/quasarflow-api/internal/infrastructure/stellar"
-	"github.com/QuasarAPI/quasarflow-api/internal/interface/http"
-	"github.com/QuasarAPI/quasarflow-api/internal/interface/http/handler"
-	"github.com/QuasarAPI/quasarflow-api/internal/usecase/wallet"
-	"github.com/QuasarAPI/quasarflow-api/pkg/logger"
+	"quasarflow-api/internal/config"
+	"quasarflow-api/internal/infrastructure/crypto"
+	"quasarflow-api/internal/infrastructure/database"
+	"quasarflow-api/internal/infrastructure/stellar"
+	httpHandler "quasarflow-api/internal/interface/http"
+	"quasarflow-api/internal/interface/http/handler"
+	"quasarflow-api/internal/usecase/wallet"
+	"quasarflow-api/pkg/logger"
+
 	_ "github.com/lib/pq"
 )
 
@@ -30,7 +31,7 @@ func main() {
 	// Connect to database
 	db, err := sql.Open("postgres", cfg.DatabaseURL)
 	if err != nil {
-		log.Fatal("failed to connect to database", "error", err)
+		log.Fatal("failed to connect to database", logger.Error(err))
 	}
 	defer db.Close()
 
@@ -43,7 +44,7 @@ func main() {
 	// Setup crypto
 	encryptor, err := crypto.NewAESEncryptor(cfg.EncryptionKey)
 	if err != nil {
-		log.Fatal("failed to create encryptor", "error", err)
+		log.Fatal("failed to create encryptor", logger.Error(err))
 	}
 
 	// Setup use cases
@@ -57,7 +58,7 @@ func main() {
 	healthHandler := handler.NewHealthHandler(db)
 
 	// Setup router
-	router := http.SetupRouter(walletHandler, healthHandler)
+	router := httpHandler.SetupRouter(walletHandler, healthHandler)
 
 	// Setup HTTP server
 	srv := &http.Server{
@@ -70,9 +71,9 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		log.Info("starting server", "address", cfg.ServerAddress)
+		log.Info("starting server", logger.String("address", cfg.ServerAddress))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("server failed", "error", err)
+			log.Fatal("server failed", logger.Error(err))
 		}
 	}()
 
@@ -87,7 +88,7 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("server forced to shutdown", "error", err)
+		log.Fatal("server forced to shutdown", logger.Error(err))
 	}
 
 	log.Info("server exited")

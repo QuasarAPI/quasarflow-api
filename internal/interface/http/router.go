@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/QuasarAPI/quasarflow-api/internal/interface/http/handler"
-	"github.com/QuasarAPI/quasarflow-api/internal/interface/http/middleware"
 	"github.com/gorilla/mux"
+	"quasarflow-api/internal/interface/http/handler"
+	"quasarflow-api/internal/interface/http/middleware"
 )
 
 func SetupRouter(walletHandler *handler.WalletHandler, healthHandler *handler.HealthHandler) *mux.Router {

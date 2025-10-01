@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/QuasarAPI/quasarflow-api/internal/domain/wallet"
+	"quasarflow-api/internal/domain/wallet"
+
 	"github.com/google/uuid"
 )
 
@@ -98,4 +99,44 @@ func (r *PostgresWalletRepository) List(ctx context.Context, limit, offset int) 
 	}
 
 	return wallets, nil
+}
+
+func (r *PostgresWalletRepository) FindByPublicKey(ctx context.Context, publicKey string) (*wallet.Wallet, error) {
+	query := `
+        SELECT id, public_key, encrypted_key, network, created_at, updated_at
+        FROM wallets
+        WHERE public_key = $1
+    `
+
+	w := &wallet.Wallet{}
+	err := r.db.QueryRowContext(ctx, query, publicKey).Scan(
+		&w.ID,
+		&w.PublicKey,
+		&w.EncryptedKey,
+		&w.Network,
+		&w.CreatedAt,
+		&w.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("wallet not found")
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to find wallet: %w", err)
+	}
+
+	return w, nil
+}
+
+func (r *PostgresWalletRepository) Count(ctx context.Context) (int64, error) {
+	query := `SELECT COUNT(*) FROM wallets`
+
+	var count int64
+	err := r.db.QueryRowContext(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count wallets: %w", err)
+	}
+
+	return count, nil
 }

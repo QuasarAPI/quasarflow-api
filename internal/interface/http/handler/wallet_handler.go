@@ -3,9 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
-	"github.com/QuasarAPI/quasarflow-api/internal/interface/http/response"
-	"github.com/QuasarAPI/quasarflow-api/internal/usecase/wallet"
+	"quasarflow-api/internal/interface/http/response"
+	"quasarflow-api/internal/usecase/wallet"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
@@ -73,6 +75,32 @@ func (h *WalletHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	output, err := h.getBalance.Execute(r.Context(), id)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(w, http.StatusOK, output)
+}
+
+func (h *WalletHandler) List(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters
+	limit := 10
+	offset := 0
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		if parsedOffset, err := strconv.Atoi(offsetStr); err == nil && parsedOffset >= 0 {
+			offset = parsedOffset
+		}
+	}
+
+	output, err := h.listWallets.Execute(r.Context(), limit, offset)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
