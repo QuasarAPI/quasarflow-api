@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/QuasarAPI/quasarflow-api/internal/domain/stellar"
-	"github.com/QuasarAPI/quasarflow-api/internal/domain/wallet"
-	"github.com/QuasarAPI/quasarflow-api/internal/infrastructure/stellar"
+	domainStellar "quasarflow-api/internal/domain/stellar"
+	"quasarflow-api/internal/domain/wallet"
+	"quasarflow-api/internal/infrastructure/stellar"
+
 	"github.com/google/uuid"
 )
 
 type GetBalanceOutput struct {
-	PublicKey string            `json:"public_key"`
-	Network   string            `json:"network"`
-	Balances  []stellar.Balance `json:"balances"`
+	PublicKey string                  `json:"public_key"`
+	Network   string                  `json:"network"`
+	Balances  []domainStellar.Balance `json:"balances"`
 }
 
 type GetBalanceUseCase struct {
