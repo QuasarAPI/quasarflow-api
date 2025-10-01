@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/QuasarAPI/quasarflow-api/internal/domain/stellar"
+	"quasarflow-api/internal/domain/stellar"
+
+	"github.com/shopspring/decimal"
 	"github.com/stellar/go/clients/horizonclient"
 )
 

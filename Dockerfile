@@ -1,16 +1,22 @@
 # ================================
 # STAGE 1 - Build
 # ================================
-FROM golang:1.24 AS builder
+FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+# Copy go mod files
+COPY go.mod ./
+COPY go.sum* ./
+
+# Download dependencies
 RUN go mod download
 
+# Copy source code
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o quasarflow-api ./cmd/api
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o quasarflow-api ./cmd/api
 
 # ================================
 # STAGE 2 - Runtime
