@@ -79,3 +79,69 @@ var (
 		nil,
 	)
 )
+
+// Authentication-specific errors
+var (
+	// ErrMissingAuthHeader is returned when Authorization header is missing
+	ErrMissingAuthHeader = &AppError{
+		Type:       ErrorTypeUnauthorized,
+		Message:    "Authorization header is required",
+		StatusCode: 401,
+	}
+
+	// ErrInvalidAuthFormat is returned when Authorization header format is invalid
+	ErrInvalidAuthFormat = &AppError{
+		Type:       ErrorTypeUnauthorized,
+		Message:    "Invalid authorization header format",
+		StatusCode: 401,
+	}
+
+	// ErrInvalidToken is returned when JWT token is invalid or expired
+	ErrInvalidToken = &AppError{
+		Type:       ErrorTypeUnauthorized,
+		Message:    "Invalid or expired token",
+		StatusCode: 401,
+	}
+
+	// ErrInvalidSigningMethod is returned when JWT signing method is unexpected
+	ErrInvalidSigningMethod = &AppError{
+		Type:       ErrorTypeUnauthorized,
+		Message:    "Unexpected signing method",
+		StatusCode: 401,
+	}
+
+	// ErrInvalidTokenClaims is returned when JWT claims are invalid
+	ErrInvalidTokenClaims = &AppError{
+		Type:       ErrorTypeUnauthorized,
+		Message:    "Invalid token claims",
+		StatusCode: 401,
+	}
+
+	// ErrInvalidTokenIssuer is returned when JWT issuer is invalid
+	ErrInvalidTokenIssuer = &AppError{
+		Type:       ErrorTypeUnauthorized,
+		Message:    "Invalid token issuer",
+		StatusCode: 401,
+	}
+
+	// ErrTokenExpired is returned when JWT token has expired
+	ErrTokenExpired = &AppError{
+		Type:       ErrorTypeUnauthorized,
+		Message:    "Token has expired",
+		StatusCode: 401,
+	}
+
+	// ErrUserRoleNotFound is returned when user role is not found in context
+	ErrUserRoleNotFound = &AppError{
+		Type:       ErrorTypeUnauthorized,
+		Message:    "User role not found",
+		StatusCode: 403,
+	}
+
+	// ErrInsufficientPermissions is returned when user lacks required permissions
+	ErrInsufficientPermissions = &AppError{
+		Type:       ErrorTypeUnauthorized,
+		Message:    "Insufficient permissions",
+		StatusCode: 403,
+	}
+)

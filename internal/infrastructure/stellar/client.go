@@ -3,6 +3,7 @@ package stellar
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"quasarflow-api/internal/domain/stellar"
 
@@ -50,4 +51,62 @@ func (c *Client) GetAccountBalances(ctx context.Context, publicKey string) ([]st
 	}
 
 	return balances, nil
+}
+
+func (c *Client) GetHorizonClient() *horizonclient.Client {
+	return c.horizon
+}
+
+// GetTransaction retrieves a transaction by hash
+func (c *Client) GetTransaction(transactionHash string) (*TransactionInfo, error) {
+	tx, err := c.horizon.TransactionDetail(transactionHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch transaction: %w", err)
+	}
+
+	return &TransactionInfo{
+		Hash:            tx.Hash,
+		SourceAccount:   tx.Account,
+		LedgerCloseTime: tx.LedgerCloseTime,
+		Memo:            tx.Memo,
+	}, nil
+}
+
+// GetAccount retrieves account details
+func (c *Client) GetAccount(publicKey string) (*AccountInfo, error) {
+	accountRequest := horizonclient.AccountRequest{
+		AccountID: publicKey,
+	}
+
+	account, err := c.horizon.AccountDetail(accountRequest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch account: %w", err)
+	}
+
+	// Handle nullable LastModifiedTime
+	var lastModified time.Time
+	if account.LastModifiedTime != nil {
+		lastModified = *account.LastModifiedTime
+	}
+
+	return &AccountInfo{
+		AccountID:        account.AccountID,
+		LastModifiedTime: lastModified,
+		Sequence:         fmt.Sprintf("%d", account.Sequence),
+	}, nil
+}
+
+// TransactionInfo represents simplified transaction information
+type TransactionInfo struct {
+	Hash            string
+	SourceAccount   string
+	LedgerCloseTime time.Time
+	Memo            string
+}
+
+// AccountInfo represents simplified account information
+type AccountInfo struct {
+	AccountID        string
+	LastModifiedTime time.Time
+	Sequence         string
 }

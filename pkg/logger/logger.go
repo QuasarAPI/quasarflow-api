@@ -4,9 +4,10 @@ import (
 	"context"
 	"os"
 
+	"quasarflow-api/pkg/errors"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"quasarflow-api/pkg/errors"
 )
 
 type Logger interface {
@@ -94,6 +95,10 @@ func Int(key string, value int) Field {
 	return zap.Int(key, value)
 }
 
+func Int32(key string, value int32) Field {
+	return zap.Int32(key, value)
+}
+
 func Error(err error) Field {
 	if appErr, ok := err.(*errors.AppError); ok {
 		return zap.Object("error", zapcore.ObjectMarshalerFunc(func(enc zapcore.ObjectEncoder) error {
@@ -109,6 +114,10 @@ func Error(err error) Field {
 		}))
 	}
 	return zap.Error(err)
+}
+
+func Bool(key string, value bool) Field {
+	return zap.Bool(key, value)
 }
 
 func Any(key string, value interface{}) Field {
