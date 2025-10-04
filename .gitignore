@@ -1,0 +1,87 @@
+# Environment variables (contains secrets)
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+/tmp/
+dist/
+build/
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Test coverage
+*.cover
+*.coverprofile
+
+# Logs
+*.log
+logs/
+build-errors.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker volumes and data
+postgres_data/
+stellar_data/
+docker-compose.override.yml
+
+# Backup files
+*.sql
+*.bak
+*.backup
+backups/
+
+# Local development files
+.local/
+local/
+dev/
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Test artifacts
+test-results/
+coverage/
+
+# Air (hot reload) temporary files
+tmp/
+.air/
+
+# Go module cache (if using local development)
+vendor/

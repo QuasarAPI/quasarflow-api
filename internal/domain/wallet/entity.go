@@ -30,8 +30,8 @@ func NewWallet(publicKey, encryptedKey, network string) (*Wallet, error) {
 		return nil, fmt.Errorf("encrypted key is required")
 	}
 
-	if network != "testnet" && network != "mainnet" {
-		return nil, fmt.Errorf("invalid network: must be 'testnet' or 'mainnet'")
+	if network != "testnet" && network != "mainnet" && network != "local" {
+		return nil, fmt.Errorf("invalid network: must be 'testnet', 'mainnet', or 'local'")
 	}
 
 	return &Wallet{

@@ -1,0 +1,114 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-quasarflow}-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-quasarflow}
+      POSTGRES_USER: ${POSTGRES_USER:-stellar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stellar123}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-stellar} -d ${POSTGRES_DB:-quasarflow}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: ${RESTART_POLICY:-unless-stopped}
+    networks:
+      - quasarflow-network
+
+  # Stellar Quickstart (Local/Testnet Network)
+  stellar-quickstart:
+    image: stellar/quickstart:${STELLAR_VERSION:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-quasarflow}-stellar
+    command: --${STELLAR_NETWORK:-local} --enable core,horizon,rpc,friendbot --logs
+    ports:
+      - "${STELLAR_HORIZON_PORT:-8000}:8000"
+      - "${STELLAR_CORE_PORT:-11626}:11626"
+    environment:
+      NETWORK: ${STELLAR_NETWORK:-local}
+      ENABLE_LOGS: ${STELLAR_ENABLE_LOGS:-true}
+    volumes:
+      - stellar_data:/opt/stellar
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: ${RESTART_POLICY:-unless-stopped}
+    networks:
+      - quasarflow-network
+
+  # QuasarFlow API
+  quasarflow-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-quasarflow}/api:${API_VERSION:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-quasarflow}-api
+    env_file:
+      - .env
+    environment:
+      # Override for Docker networking
+      DATABASE_URL: postgresql://${POSTGRES_USER:-stellar}:${POSTGRES_PASSWORD:-stellar123}@postgres:5432/${POSTGRES_DB:-quasarflow}?sslmode=disable
+      STELLAR_HORIZON_URL: ${STELLAR_HORIZON_URL:-http://stellar-quickstart:8000}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: 40s
+    restart: ${RESTART_POLICY:-unless-stopped}
+    networks:
+      - quasarflow-network
+
+  # Database Migrations
+  migrate:
+    image: migrate/migrate:${MIGRATE_VERSION:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-quasarflow}-migrate
+    volumes:
+      - ./migrations:/migrations:ro
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgresql://${POSTGRES_USER:-stellar}:${POSTGRES_PASSWORD:-stellar123}@postgres:5432/${POSTGRES_DB:-quasarflow}?sslmode=disable",
+        "up",
+      ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - quasarflow-network
+    restart: "no"
+
+volumes:
+  postgres_data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-quasarflow}_postgres_data
+  stellar_data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-quasarflow}_stellar_data
+
+networks:
+  quasarflow-network:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-quasarflow}_network
