@@ -15,6 +15,7 @@ import (
 	"quasarflow-api/internal/infrastructure/stellar"
 	httpHandler "quasarflow-api/internal/interface/http"
 	"quasarflow-api/internal/interface/http/handler"
+	"quasarflow-api/internal/interface/http/middleware"
 	"quasarflow-api/internal/usecase/wallet"
 	"quasarflow-api/pkg/logger"
 
@@ -52,13 +53,32 @@ func main() {
 	getWalletUC := wallet.NewGetWalletUseCase(walletRepo)
 	getBalanceUC := wallet.NewGetBalanceUseCase(walletRepo, stellarClient)
 	listWalletsUC := wallet.NewListWalletsUseCase(walletRepo)
+	// Get Friendbot URL from environment variable
+	friendbotURL := cfg.FriendbotURL
+
+	fundWalletUC := wallet.NewFundWalletUseCase(walletRepo, friendbotURL, log)
+	sendPaymentUC := wallet.NewSendPaymentUseCase(walletRepo, stellarClient.GetHorizonClient(), encryptor, log)
+	getTransactionHistUC := wallet.NewGetTransactionHistoryUseCase(walletRepo, stellarClient.GetHorizonClient(), log)
+
+	// Setup ownership verification use case
+	verifyOwnershipUC := wallet.NewVerifyOwnershipUseCase(*stellarClient, log, cfg.APIBaseURL)
+
+	// Setup authentication middleware
+	authConfig := middleware.AuthConfig{
+		SecretKey:     cfg.JWTSecret,
+		TokenDuration: parseDuration(cfg.JWTExpiration),
+		Issuer:        cfg.JWTIssuer,
+	}
+	authMiddleware := middleware.NewAuthMiddleware(authConfig, log)
 
 	// Setup handlers
-	walletHandler := handler.NewWalletHandler(createWalletUC, getWalletUC, getBalanceUC, listWalletsUC)
+	walletHandler := handler.NewWalletHandler(createWalletUC, getWalletUC, getBalanceUC, listWalletsUC, fundWalletUC, sendPaymentUC, getTransactionHistUC, log)
+	accountHandler := handler.NewAccountHandler(verifyOwnershipUC, getBalanceUC, getTransactionHistUC, log)
 	healthHandler := handler.NewHealthHandler(db)
+	authHandler := handler.NewAuthHandler(authMiddleware, log)
 
 	// Setup router
-	router := httpHandler.SetupRouter(walletHandler, healthHandler)
+	router := httpHandler.SetupRouter(walletHandler, accountHandler, healthHandler, authHandler, cfg, log)
 
 	// Setup HTTP server
 	srv := &http.Server{
@@ -92,4 +112,14 @@ func main() {
 	}
 
 	log.Info("server exited")
+}
+
+// parseDuration parses a duration string and returns a time.Duration
+func parseDuration(durationStr string) time.Duration {
+	duration, err := time.ParseDuration(durationStr)
+	if err != nil {
+		// Default to 24 hours if parsing fails
+		return 24 * time.Hour
+	}
+	return duration
 }
